@@ -34,3 +34,4 @@ dataset.columns = ['origin', 'destination', 'departure_at', 'airline',
     'flight_number', 'price', 'expires_at']
 print(dataset.sample(3))
 print(dataset.size)
+dataset.to_csv('./aviasales_data.csv')
