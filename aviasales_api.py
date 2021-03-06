@@ -1,5 +1,6 @@
 from requests_futures import sessions
 from json import loads
+from datetime import datetime
 import pandas as pd
 
 def response_hook(response, *args, **kwargs):
@@ -8,7 +9,7 @@ def response_hook(response, *args, **kwargs):
 session = sessions.FuturesSession()
 session.hooks['response'] = response_hook
 
-iata_codes = ['MOW', 'LED', 'KZN', 'CEK', 'SVX']    # Moscow, Saint Petersburg, Kazan, Chelyabinsk, Ekaterinburg
+iata_codes = ['MOW', 'LED', 'KZN', 'CEK', 'SVX', 'AER']    # Moscow, Saint Petersburg, Kazan, Chelyabinsk, Ekaterinburg, Sochi
 
 futures = [
     session.get("http://api.travelpayouts.com/v1/prices/calendar?origin={0}&destination={1}&depart_date=2021-03&token=101d5606239788bc02f0f52531623618".format(A, B))
@@ -19,6 +20,9 @@ results = [
     for future in futures
 ]
 
+now = datetime.now()
+requested_at = now.strftime("%y-%m-%dT%H:%M:%SZ")
+
 ds_results = []
 res_dicts = [result.data['data'] for result in results]
 for res_dict in res_dicts:
@@ -26,12 +30,12 @@ for res_dict in res_dicts:
         ds_results.append((res_dict[key]['origin'], res_dict[key]['destination'],
             res_dict[key]['departure_at'], res_dict[key]['airline'],
                 res_dict[key]['flight_number'], res_dict[key]['price'],
-                    res_dict[key]['expires_at']))
-## Fields: origin, destination, departure_at, airline, flight_number, price, expires_at, requested_at(?)
+                    res_dict[key]['expires_at'], requested_at))
+## Fields: origin, destination, departure_at, airline, flight_number, price, expires_at, requested_at
 
 dataset = pd.DataFrame(ds_results)
 dataset.columns = ['origin', 'destination', 'departure_at', 'airline',
-    'flight_number', 'price', 'expires_at']
+    'flight_number', 'price', 'expires_at', 'requested_at']
 print(dataset.sample(3))
 print(dataset.size)
-dataset.to_csv('./aviasales_data.csv')
+dataset.to_csv('./aviasales_data_t.csv', index=False, mode='a')   # mode='a'
