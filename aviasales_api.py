@@ -13,16 +13,21 @@ iata_codes = ['MOW', 'LED', 'KZN', 'CEK', 'SVX', 'AER', 'KRR', 'KGD']    # Mosco
 iata_codes_extra = ['SGC', 'OVB', 'VVO', 'YKS']      # Surgut, Novosibirsk, Vladivostok, Yakutsk
 iata_codes_for_extra = ['MOW', 'LED', 'SVX']
 
+now = datetime.now()
+M = now.month
+if M < 10:
+    M = '0' + str(M)
+
 futures = [
-    session.get("http://api.travelpayouts.com/v1/prices/calendar?origin={0}&destination={1}&depart_date=2021-03&token=101d5606239788bc02f0f52531623618".format(A, B))
+    session.get("http://api.travelpayouts.com/v1/prices/calendar?origin={0}&destination={1}&depart_date=2021-{2}&token=101d5606239788bc02f0f52531623618".format(A, B, M))
     for A in iata_codes for B in iata_codes if A != B
 ]
 futures.extend([
-    session.get("http://api.travelpayouts.com/v1/prices/calendar?origin={0}&destination={1}&depart_date=2021-03&token=101d5606239788bc02f0f52531623618".format(A, B))
+    session.get("http://api.travelpayouts.com/v1/prices/calendar?origin={0}&destination={1}&depart_date=2021-{2}&token=101d5606239788bc02f0f52531623618".format(A, B, M))
     for A in iata_codes_extra for B in iata_codes_for_extra if A != B
 ])
 futures.extend([
-    session.get("http://api.travelpayouts.com/v1/prices/calendar?origin={0}&destination={1}&depart_date=2021-03&token=101d5606239788bc02f0f52531623618".format(A, B))
+    session.get("http://api.travelpayouts.com/v1/prices/calendar?origin={0}&destination={1}&depart_date=2021-{2}&token=101d5606239788bc02f0f52531623618".format(A, B, M))
     for A in iata_codes_for_extra for B in iata_codes_extra if A != B
 ])
 
