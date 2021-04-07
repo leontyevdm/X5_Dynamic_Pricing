@@ -21,7 +21,7 @@ def handle_error(error):
 
 @application.route('/', methods=['GET'])
 def describe():
-    return '1C bot'
+    return 'Hello'
 
 @application.before_request
 @logged
