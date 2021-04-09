@@ -13,3 +13,7 @@ def set_app(_app):
 def get_app():
     global app
     return app
+
+def get_model():
+    global model
+    return model

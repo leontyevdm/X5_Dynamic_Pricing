@@ -7,7 +7,7 @@ import pages # for init pages
 from tools.mods import get_flag_LOCAL_MODE
 from tools.log import logger
 import sys
-
+from model import PricePredictor
 @application.errorhandler(Exception)
 def handle_error(error):
     if get_flag_LOCAL_MODE():
@@ -50,6 +50,9 @@ def after_request(response):
 
 if __name__ == "__main__":
     creating_scratch.create_or_connect_to_db()
+    global model
+    model=PricePredictor()
+    model.fit()
 
-
-    application.run(port=5000 if len(sys.argv) == 1 else int(sys.argv[1]), threaded=True)
+    global app
+    app=application.run(port=5000 if len(sys.argv) == 1 else int(sys.argv[1]), threaded=True)
