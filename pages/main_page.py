@@ -22,7 +22,7 @@ from globals import get_model
 main_page = Blueprint('main_page', __name__, template_folder='templates')
 
 
-@main_page.route('/model', methods=['POST'])
+@main_page.route('/predict_prices', methods=['POST'])
 @logged
 def predict():
     data = json.loads(request.data)
@@ -30,5 +30,5 @@ def predict():
     dest = data['destination']
     flight_date = data['flight_date']
     current_date = data['date']
-    days, prices = get_model().predict(origin, dest, current_date, flight_date)
+    days, prices = get_model().predict_queried_prices(origin, dest, current_date, flight_date)
     return make_response("200", json.dumps({"days": days, "prices": prices}))

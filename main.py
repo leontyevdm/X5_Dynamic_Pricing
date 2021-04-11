@@ -52,7 +52,5 @@ if __name__ == "__main__":
     creating_scratch.create_or_connect_to_db()
     global model
     model=PricePredictor()
-    model.fit()
-
     global app
     app=application.run(port=5000 if len(sys.argv) == 1 else int(sys.argv[1]), threaded=True)
