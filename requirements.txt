@@ -1,9 +1,6 @@
 Flask
 flask
 peewee==3.5.2
-Wer
-DateTime==4.2
-psycopg2==2.7.5
 flask-peewee==3.0.3
 requests==2.11.1
 requests-toolbelt==0.7.0
