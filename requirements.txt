@@ -12,4 +12,4 @@ sktime
 matplotlib
 Flask-Cors
 seaborn
-pdarima
+pmdarima== 1.8.0
