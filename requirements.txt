@@ -12,7 +12,6 @@ py-trello==0.14.0
 twilio==6.24.1
 requests==2.11.1
 requests-toolbelt==0.7.0
-onedrivesdk
 pandas
 numpy
 sklearn
