@@ -6,5 +6,4 @@ from pages.main_page import main_page
 from pages.ml_model_page import ml_model_page
 
 get_app().register_blueprint(ml_model_page)
-get_app().register_blueprint(db_page)
 get_app().register_blueprint(main_page)

@@ -4,7 +4,7 @@ import matplotlib as plt
 import numpy as np
 import seaborn as sns
 import datetime
-
+from datetime import datetime as date
 from sktime.forecasting.model_selection import temporal_train_test_split
 from sktime.utils.plotting import plot_series
 from sktime.forecasting.naive import NaiveForecaster
@@ -53,7 +53,10 @@ class PricePredictor():
         df = self.prepare_df()
         days = []
         predictions = []
-        delta = flight_date - current_date
+        flight_date= date.strptime(flight_date, '%d.%m.%y')
+        current_date= date.strptime(current_date,'%d.%m.%y')
+
+        delta = flight_date-current_date
         for i in range(delta.days + 1):
             days.append((flight_date - datetime.timedelta(days=i)).strftime("%Y-%m-%d"))
             predictions.append(self.predict_queried_prices_for(orgn, dest, current_date, flight_date, i, df))

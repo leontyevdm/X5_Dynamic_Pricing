@@ -1,9 +1,10 @@
 from flask import g, Flask
-
+from model import PricePredictor
 
 # тут содержатся глобальные переменные для всего приложения
 
 app = Flask(__name__)
+model=PricePredictor()
 
 def set_app(_app):
     global app

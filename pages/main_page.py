@@ -31,4 +31,4 @@ def predict():
     flight_date = data['flight_date']
     current_date = data['date']
     days, prices = get_model().predict_queried_prices(origin, dest, current_date, flight_date)
-    return make_response("200", json.dumps({"days": days, "prices": prices}))
+    return make_response(json.dumps({"days": days, "prices": prices}),200)
