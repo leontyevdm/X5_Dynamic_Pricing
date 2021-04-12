@@ -11,3 +11,4 @@ sklearn
 sktime
 matplotlib
 Flask-Cors
+seaborn
