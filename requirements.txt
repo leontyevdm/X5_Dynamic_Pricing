@@ -9,7 +9,7 @@ requests==2.11.1
 requests-toolbelt==0.7.0
 pandas
 numpy
-request_futures
+requests-futures == 1.0.0
 sklearn
 sktime
 matplotlib
