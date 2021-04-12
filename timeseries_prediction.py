@@ -55,3 +55,27 @@ def predict_queried_prices(orgn, dest, current_date, flight_date):
         days.append((flight_date - datetime.timedelta(days=i)).strftime("%Y-%m-%d"))
         predictions.append(predict_queried_prices_for(orgn, dest, current_date, flight_date, i, df))
     return days, predictions
+
+
+def show_real_prices(orgn, dest, current_date, flight_date, delta_days=7):
+    if current_date < flight_date: 
+        return np.nan
+    df = prepare_df()	
+    orgn_dest = df[(df["origin"] == orgn) & (df["destination"] == dest) & (df["departure_at"] <= flight_date + datetime.timedelta(days=1))
+                   & (df["departure_at"] >= flight_date)]
+    # display(orgn_dest)
+    
+    days = []
+    prices = []
+    for i in range(delta_days + 1):
+        orgn_dest_day = orgn_dest[(orgn_dest["requested_at"] >= orgn_dest["departure_at"] - datetime.timedelta(days=i + 1))
+                           & (orgn_dest["requested_at"] <= orgn_dest["departure_at"] - datetime.timedelta(days=i))]
+        if orgn_dest_day.empty:
+            orgn_dest_day = orgn_dest[(orgn_dest["expires_at"] >= orgn_dest["departure_at"] - datetime.timedelta(days=i + 1))
+                               & (orgn_dest["expires_at"] <= orgn_dest["departure_at"] - datetime.timedelta(days=i))]
+        
+        prices.append(orgn_dest_day["price"].min())
+        days.append((flight_date - datetime.timedelta(days=i)).strftime("%Y-%m-%d"))
+        # display(orgn_dest_day)
+    return days, prices
+
