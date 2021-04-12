@@ -16,6 +16,5 @@ pandas
 numpy
 sklearn
 sktime
-json
 matplotlib
 Flask-Cors==1.10.3
