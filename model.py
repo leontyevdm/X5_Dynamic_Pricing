@@ -56,8 +56,33 @@ class PricePredictor():
         flight_date= date.strptime(flight_date, '%d.%m.%y')
         current_date= date.strptime(current_date,'%d.%m.%y')
 
-        delta = flight_date-current_date
+        delta = flight_date - current_date
         for i in range(delta.days + 1):
             days.append((flight_date - datetime.timedelta(days=i)).strftime("%Y-%m-%d"))
             predictions.append(self.predict_queried_prices_for(orgn, dest, current_date, flight_date, i, df))
         return days, predictions
+
+    def show_real_prices(self,orgn, dest, current_date, flight_date, delta_days=7):
+        flight_date= date.strptime(flight_date, '%d.%m.%y')
+        current_date= date.strptime(current_date,'%d.%m.%y')
+        df = self.prepare_df()
+        orgn_dest = df[(df["origin"] == orgn) & (df["destination"] == dest) & (
+                    df["departure_at"] <= flight_date + datetime.timedelta(days=1))
+                       & (df["departure_at"] >= flight_date)]
+        # display(orgn_dest)
+
+        days = []
+        prices = []
+        for i in range(delta_days + 1):
+            orgn_dest_day = orgn_dest[
+                (orgn_dest["requested_at"] >= orgn_dest["departure_at"] - datetime.timedelta(days=i + 1))
+                & (orgn_dest["requested_at"] <= orgn_dest["departure_at"] - datetime.timedelta(days=i))]
+            if orgn_dest_day.empty:
+                orgn_dest_day = orgn_dest[
+                    (orgn_dest["expires_at"] >= orgn_dest["departure_at"] - datetime.timedelta(days=i + 1))
+                    & (orgn_dest["expires_at"] <= orgn_dest["departure_at"] - datetime.timedelta(days=i))]
+
+            prices.append(orgn_dest_day["price"].min())
+            days.append((flight_date - datetime.timedelta(days=i)).strftime("%Y-%m-%d"))
+            # display(orgn_dest_day)
+        return days, prices

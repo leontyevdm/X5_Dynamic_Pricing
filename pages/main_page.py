@@ -1,4 +1,3 @@
-
 from tools.log import logged
 from tools.log import logged
 from db import creating_scratch
@@ -31,4 +30,5 @@ def predict():
     flight_date = data['flight_date']
     current_date = data['date']
     days, prices = get_model().predict_queried_prices(origin, dest, current_date, flight_date)
-    return make_response(json.dumps({"days": days, "prices": prices}),200)
+    x, real_prices = get_model().show_real_prices(origin, dest, current_date, flight_date)
+    return make_response(json.dumps({"days": days, "prices": prices, "real_prices": real_prices}), 200)
