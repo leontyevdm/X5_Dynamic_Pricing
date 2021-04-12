@@ -21,7 +21,7 @@ from globals import get_model
 main_page = Blueprint('main_page', __name__, template_folder='templates')
 
 
-@main_page.route('/predict_prices', methods=['POST'])
+@main_page.route('/predict_prices', methods=['POST','OPTIONS'])
 @logged
 def predict():
     data = json.loads(request.data)
