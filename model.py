@@ -65,6 +65,7 @@ class PricePredictor():
     def show_real_prices(self,orgn, dest, current_date, flight_date, delta_days=7):
         flight_date= date.strptime(flight_date, '%d.%m.%y')
         current_date= date.strptime(current_date,'%d.%m.%y')
+        delta_days=(flight_date - current_date).days
         df = self.prepare_df()
         orgn_dest = df[(df["origin"] == orgn) & (df["destination"] == dest) & (
                     df["departure_at"] <= flight_date + datetime.timedelta(days=1))
