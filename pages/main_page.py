@@ -24,6 +24,8 @@ main_page = Blueprint('main_page', __name__, template_folder='templates')
 @main_page.route('/predict_prices', methods=['POST','OPTIONS'])
 @logged
 def predict():
+    if request.method == "OPTIONS":
+        return make_response(json.dumps({}), 200)
     data = json.loads(request.data)
     origin = data['origin']
     dest = data['destination']
