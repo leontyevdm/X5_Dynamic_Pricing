@@ -1,13 +1,25 @@
 import pandas as pd
+# import pandas_profiling as pp
+import matplotlib as plt
 import numpy as np
-from datetime import datetime as date, timedelta
+import seaborn as sns
+import datetime
+from datetime import datetime as date
+from sktime.forecasting.model_selection import temporal_train_test_split
+from sktime.utils.plotting import plot_series
+from sktime.forecasting.naive import NaiveForecaster
+from sktime.forecasting.base import ForecastingHorizon
+from sktime.performance_metrics.forecasting import sMAPE, smape_loss
+from sktime.forecasting.exp_smoothing import ExponentialSmoothing
+from sktime.forecasting.arima import ARIMA, AutoARIMA
+import pandas as pd
+import numpy as np
+from datetime import datetime, timedelta
 import xgboost as xgb
 
-
 class PricePredictor():
-    import pandas as pd
-    import numpy as np
-    from datetime import datetime, timedelta
+    def __init__(self):
+        self.data=self.init_df()
 
     def get_int(self,s):
         try:
@@ -15,20 +27,27 @@ class PricePredictor():
         except:
             return None
 
-    def prepare_df(self,origin, destination) -> pd.DataFrame:
+    def init_df(self) -> pd.DataFrame:
         df = pd.read_csv('aviasales_data_t.csv')
-        df = df.loc[df['origin'] == origin]
-        df = df.loc[df['destination'] == destination]
         df['departure_time'] = pd.to_datetime(df['departure_at'], errors='coerce')
         df['requested_time'] = pd.to_datetime('20' + df['requested_at'], errors='coerce')
         df['before_flight'] = (df['departure_time'] - df['requested_time']).apply(
             lambda x: x.total_seconds() / 3600)
         df['requested_date'] = df['requested_time'].apply(lambda x: x.date())
         df['departure_date'] = df['departure_time'].apply(lambda x: x.date())
-        df = df.groupby(['departure_date', 'requested_date']).min()
-        df = pd.DataFrame(df[['price', 'before_flight']])
+        df = pd.DataFrame(df[['price', 'before_flight', 'origin', 'destination', 'departure_date', 'requested_date']])
         df['price'] = df['price'].apply(lambda x: self.get_int(x))
+        df = df.groupby(['departure_date', 'requested_date', 'origin', 'destination']).min()
+
         df = df.reset_index()
+
+        return df
+
+
+    def prepare_df(self,origin, destination) -> pd.DataFrame:
+        df = self.data.loc[self.data['origin'] == origin]
+        df = df.loc[df['destination'] == destination]
+        df.drop(['origin', 'destination'], axis=1)
 
         return df
 
@@ -81,11 +100,11 @@ class PricePredictor():
 
         X_test = self.create_only_date_train_features(pd.DataFrame(rows))
         y_pred = model.predict(X_test)
-        return days, y_pred.tolist()
+        return days, list(y_pred)
 
     def show_real_prices(self,origin, destination, current_date, flight_date, delta_days=7):
-        flight_date = date.strptime(flight_date, '%d.%m.%y')
-        current_date = date.strptime(current_date, '%d.%m.%y')
+        flight_date= date.strptime(flight_date, '%d.%m.%y')
+        current_date= date.strptime(current_date,'%d.%m.%y')
         df = self.prepare_df(origin, destination)
         days = []
         prices = []
@@ -101,4 +120,4 @@ class PricePredictor():
                 pass
             prices.append(price)
 
-        return days, prices
+        return days, list(prices)
