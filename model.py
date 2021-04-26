@@ -1,14 +1,13 @@
 import pandas as pd
 import numpy as np
 from datetime import datetime as date, timedelta
-
+import xgboost as xgb
 
 
 class PricePredictor():
     import pandas as pd
     import numpy as np
     from datetime import datetime, timedelta
-    import xgboost as xgb
 
     def get_int(self,s):
         try:
