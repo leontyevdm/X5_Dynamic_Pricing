@@ -32,6 +32,6 @@ def predict():
     flight_date = data['flight_date']
     current_date = data['date']
     logger.info(str(data['date'])+" "+str(data['flight_date']))
-    days, prices = get_model().predict_queried_prices(origin, dest, current_date, flight_date)
+    days, prices = get_model().predict(origin, dest, current_date, flight_date)
     x, real_prices = get_model().show_real_prices(origin, dest, current_date, flight_date)
     return make_response(json.dumps({"days": days, "prices": prices, "real_prices": real_prices}), 200)
