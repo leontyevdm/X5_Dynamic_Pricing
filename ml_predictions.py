@@ -11,20 +11,30 @@ def get_int(s):
         return None
 
 
-def prepare_df(origin, destination) -> pd.DataFrame:
+def init_df() -> pd.DataFrame:
     df = pd.read_csv('aviasales_data_t.csv')
-    df = df.loc[df['origin'] == origin]
-    df = df.loc[df['destination'] == destination]
     df['departure_time'] = pd.to_datetime(df['departure_at'], errors='coerce')
     df['requested_time'] = pd.to_datetime('20' + df['requested_at'], errors='coerce')
     df['before_flight'] = (df['departure_time'] - df['requested_time']).apply(
         lambda x: x.total_seconds() / 3600)
     df['requested_date'] = df['requested_time'].apply(lambda x: x.date())
     df['departure_date'] = df['departure_time'].apply(lambda x: x.date())
-    df = df.groupby(['departure_date', 'requested_date']).min()
-    df = pd.DataFrame(df[['price', 'before_flight']])
+    df = pd.DataFrame(df[['price', 'before_flight', 'origin', 'destination', 'departure_date', 'requested_date']])
     df['price'] = df['price'].apply(lambda x: get_int(x))
+    df = df.groupby(['departure_date', 'requested_date', 'origin', 'destination']).min()
+
     df = df.reset_index()
+
+    return df
+
+
+data = init_df()
+
+
+def prepare_df(origin, destination) -> pd.DataFrame:
+    df = data.loc[data['origin'] == origin]
+    df = df.loc[df['destination'] == destination]
+    df.drop(['origin', 'destination'], axis=1)
 
     return df
 
@@ -78,7 +88,7 @@ def predict(origin, destination, current_date, flight_date):
 
     X_test = create_only_date_train_features(pd.DataFrame(rows))
     y_pred = model.predict(X_test)
-    return days, y_pred
+    return days, list(y_pred)
 
 
 def show_real_prices(origin, destination, current_date, flight_date, delta_days=7):
@@ -97,5 +107,6 @@ def show_real_prices(origin, destination, current_date, flight_date, delta_days=
             pass
         prices.append(price)
 
-    return days, prices
+    return days, list(prices)
+
 
