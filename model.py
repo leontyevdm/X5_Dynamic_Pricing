@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 import xgboost as xgb
 
 class PricePredictor():
-    def __init__(self):
+    def init_db(self):
         self.data=self.init_df()
 
     def get_int(self,s):

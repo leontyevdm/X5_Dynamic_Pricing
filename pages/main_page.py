@@ -21,6 +21,12 @@ from globals import get_model
 main_page = Blueprint('main_page', __name__, template_folder='templates')
 
 
+
+@main_page.route('/init', methods=['GET','OPTIONS'])
+@logged
+def init():
+    get_model().init_db()
+
 @main_page.route('/predict_prices', methods=['POST','OPTIONS'])
 @logged
 def predict():

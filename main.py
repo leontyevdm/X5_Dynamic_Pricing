@@ -8,7 +8,7 @@ import pages
 from tools.mods import get_flag_LOCAL_MODE
 from tools.log import logger
 import sys
-from model import PricePredictor
+#from model import PricePredictor
 @application.errorhandler(Exception)
 def handle_error(error):
     if get_flag_LOCAL_MODE():
