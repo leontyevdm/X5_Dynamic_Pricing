@@ -1,89 +1,101 @@
 import pandas as pd
-# import pandas_profiling as pp
-import matplotlib as plt
 import numpy as np
-import seaborn as sns
-import datetime
-from datetime import datetime as date
-from sktime.forecasting.model_selection import temporal_train_test_split
-from sktime.utils.plotting import plot_series
-from sktime.forecasting.naive import NaiveForecaster
-from sktime.forecasting.base import ForecastingHorizon
-from sktime.performance_metrics.forecasting import sMAPE, smape_loss
-from sktime.forecasting.exp_smoothing import ExponentialSmoothing
-from sktime.forecasting.arima import ARIMA, AutoARIMA
+from datetime import datetime, timedelta
+
 
 
 class PricePredictor():
+    import pandas as pd
+    import numpy as np
+    from datetime import datetime, timedelta
+    import xgboost as xgb
 
-    def prepare_df(self):
-        date_parser = lambda ts: datetime.strptime(ts, "%y-%m-%dT%H:%M:%SZ")
+    def get_int(self,s):
+        try:
+            return int(s)
+        except:
+            return None
+
+    def prepare_df(self,origin, destination) -> pd.DataFrame:
         df = pd.read_csv('aviasales_data_t.csv')
-        df['requested_at'] = pd.to_datetime(df['requested_at'], format="%y-%m-%dT%H:%M:%SZ", errors="coerce")
-        df['departure_at'] = pd.to_datetime(df['departure_at'], format="%Y-%m-%dT%H:%M:%SZ", errors="coerce")
-        df['expires_at'] = pd.to_datetime(df['expires_at'], format="%Y-%m-%dT%H:%M:%SZ", errors="coerce")
-        df['price'] = pd.to_numeric(df["price"], errors="coerce")
-        df = df.dropna()
-        df = df.drop_duplicates(subset=['departure_at', 'expires_at', 'airline', 'flight_number', 'price'],
-                                keep='first')
+        df = df.loc[df['origin'] == origin]
+        df = df.loc[df['destination'] == destination]
+        df['departure_time'] = pd.to_datetime(df['departure_at'], errors='coerce')
+        df['requested_time'] = pd.to_datetime('20' + df['requested_at'], errors='coerce')
+        df['before_flight'] = (df['departure_time'] - df['requested_time']).apply(
+            lambda x: x.total_seconds() / 3600)
+        df['requested_date'] = df['requested_time'].apply(lambda x: x.date())
+        df['departure_date'] = df['departure_time'].apply(lambda x: x.date())
+        df = df.groupby(['departure_date', 'requested_date']).min()
+        df = pd.DataFrame(df[['price', 'before_flight']])
+        df['price'] = df['price'].apply(lambda x: self.get_int(x))
+        df = df.reset_index()
+
         return df
 
-    def predict_queried_prices_for(self,orgn, dest, current_date, flight_date, n_days, df):
-        orgn_dest = df[(df["origin"] == orgn) & (df["destination"] == dest) & (df["departure_at"] <= flight_date)
-                       & (df["requested_at"] >= df["departure_at"] - datetime.timedelta(days=n_days + 1))
-                       & (df["requested_at"] <= df["departure_at"] - datetime.timedelta(days=n_days))]
-        # display(orgn_dest)
+    def create_only_date_train_features(self,df):
+        rows = [self.create_date_features(df.iloc[i]) for i in range(len(df))]
+        curr_df = pd.DataFrame(rows)
+        return curr_df
 
-        orgn_dest_day_min = orgn_dest.resample('D', on='requested_at')['price'].min()
+    def create_date_features(self,old_row):
+        row = {}
+        req_date = pd.to_datetime(old_row['requested_date'])
+        row['req_dayofweek'] = req_date.dayofweek
+        row['req_quarter'] = req_date.quarter
+        row['req_month'] = req_date.month
+        row['req_year'] = req_date.year
+        row['req_dayofyear'] = req_date.dayofyear
+        row['req_dayofmonth'] = req_date.day
+        row['req_weekofyear'] = req_date.weekofyear
 
-        orgn_dest_day_min = orgn_dest_day_min.fillna(orgn_dest_day_min.mean())  # not very smart
+        dep_date = pd.to_datetime(old_row['departure_date'])
+        row['dep_dayofweek'] = dep_date.dayofweek
+        row['dep_quarter'] = dep_date.quarter
+        row['dep_month'] = dep_date.month
+        row['dep_year'] = dep_date.year
+        row['dep_dayofyear'] = dep_date.dayofyear
+        row['dep_dayofmonth'] = dep_date.day
+        row['dep_weekofyear'] = dep_date.weekofyear
 
-        # display(orgn_dest_day_min)
+        row['before_flight'] = old_row['before_flight']
+        return row
 
-        y = orgn_dest_day_min
-        y_train, y_test = temporal_train_test_split(y)  # make test smaller?
-        fh = ForecastingHorizon(y_test.index, is_relative=False)
-        forecaster = AutoARIMA()
-        forecaster.fit(y_train)
-        y_pred = forecaster.predict(fh)
-        # plot_series(y_train, y_test, y_pred, labels=["y_train", "y_test", "y_pred"])
-        return round(y_pred[-1])
+    def predict(self,origin, destination, current_date, flight_date):
+        df = self.prepare_df(origin, destination)
+        df = df[df['departure_date'] < flight_date.date()]
+        y_train = df['price']
+        X_train = self.create_only_date_train_features(df)
+        model = xgb.XGBRegressor().fit(X_train, y_train)
 
-    def predict_queried_prices(self,orgn, dest, current_date, flight_date):
-        df = self.prepare_df()
+        rows = []
         days = []
-        predictions = []
-        flight_date= date.strptime(flight_date, '%d.%m.%y')
-        current_date= date.strptime(current_date,'%d.%m.%y')
-
         delta = flight_date - current_date
         for i in range(delta.days + 1):
-            days.append((flight_date - datetime.timedelta(days=i)).strftime("%Y-%m-%d"))
-            predictions.append(self.predict_queried_prices_for(orgn, dest, current_date, flight_date, i, df))
-        return days, predictions
+            req_date = (flight_date - timedelta(days=i)).date()
+            fl_date = flight_date.date()
+            before_flight = timedelta(days=i).total_seconds() / 3600
+            days.append(str(req_date))
+            rows.append({'departure_date': fl_date, 'requested_date': req_date, 'before_flight': before_flight})
 
-    def show_real_prices(self,orgn, dest, current_date, flight_date, delta_days=7):
-        flight_date= date.strptime(flight_date, '%d.%m.%y')
-        current_date= date.strptime(current_date,'%d.%m.%y')
-        delta_days=(flight_date - current_date).days
-        df = self.prepare_df()
-        orgn_dest = df[(df["origin"] == orgn) & (df["destination"] == dest) & (
-                    df["departure_at"] <= flight_date + datetime.timedelta(days=1))
-                       & (df["departure_at"] >= flight_date)]
-        # display(orgn_dest)
+        X_test = self.create_only_date_train_features(pd.DataFrame(rows))
+        y_pred = model.predict(X_test)
+        return days, y_pred
 
+    def show_real_prices(self,origin, destination, current_date, flight_date, delta_days=7):
+        df = self.prepare_df(origin, destination)
         days = []
         prices = []
         for i in range(delta_days + 1):
-            orgn_dest_day = orgn_dest[
-                (orgn_dest["requested_at"] >= orgn_dest["departure_at"] - datetime.timedelta(days=i + 1))
-                & (orgn_dest["requested_at"] <= orgn_dest["departure_at"] - datetime.timedelta(days=i))]
-            if orgn_dest_day.empty:
-                orgn_dest_day = orgn_dest[
-                    (orgn_dest["expires_at"] >= orgn_dest["departure_at"] - datetime.timedelta(days=i + 1))
-                    & (orgn_dest["expires_at"] <= orgn_dest["departure_at"] - datetime.timedelta(days=i))]
+            req_date = (flight_date - timedelta(days=i)).date()
+            fl_date = flight_date.date()
+            days.append(str(req_date))
+            price = None
+            try:
+                cur_df = df.loc[df['departure_date'] == fl_date]
+                price = cur_df.loc[cur_df['requested_date'] == req_date]['price'].iloc[0]
+            except:
+                pass
+            prices.append(price)
 
-            prices.append(orgn_dest_day["price"].min())
-            days.append((flight_date - datetime.timedelta(days=i)).strftime("%Y-%m-%d"))
-            # display(orgn_dest_day)
         return days, prices
