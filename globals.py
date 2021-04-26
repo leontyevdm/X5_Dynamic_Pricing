@@ -7,7 +7,6 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 model=PricePredictor()
-df=init_df
 
 def set_app(_app):
     global app
