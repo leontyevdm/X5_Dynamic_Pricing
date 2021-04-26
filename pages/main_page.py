@@ -26,6 +26,7 @@ main_page = Blueprint('main_page', __name__, template_folder='templates')
 @logged
 def init():
     get_model().init_db()
+    return make_response("",200)
 
 @main_page.route('/predict_prices', methods=['POST','OPTIONS'])
 @logged

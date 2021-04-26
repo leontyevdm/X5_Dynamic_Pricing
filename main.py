@@ -25,4 +25,4 @@ def describe():
     return 'Hello'
 
 if __name__ == "__main__":
-    application.run(host='0.0.0.0',port=5000 if len(sys.argv) == 1 else int(sys.argv[1]), threaded=True)
+    application.run(port=5000 if len(sys.argv) == 1 else int(sys.argv[1]), threaded=True)
