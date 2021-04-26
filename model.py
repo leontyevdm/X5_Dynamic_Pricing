@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime as date, timedelta
 
 
 
@@ -62,6 +62,8 @@ class PricePredictor():
         return row
 
     def predict(self,origin, destination, current_date, flight_date):
+        flight_date = date.strptime(flight_date, '%d.%m.%y')
+        current_date = date.strptime(current_date, '%d.%m.%y')
         df = self.prepare_df(origin, destination)
         df = df[df['departure_date'] < flight_date.date()]
         y_train = df['price']
@@ -83,6 +85,8 @@ class PricePredictor():
         return days, y_pred
 
     def show_real_prices(self,origin, destination, current_date, flight_date, delta_days=7):
+        flight_date = date.strptime(flight_date, '%d.%m.%y')
+        current_date = date.strptime(current_date, '%d.%m.%y')
         df = self.prepare_df(origin, destination)
         days = []
         prices = []
