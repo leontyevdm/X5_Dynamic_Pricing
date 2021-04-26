@@ -100,6 +100,9 @@ class PricePredictor():
 
         X_test = self.create_only_date_train_features(pd.DataFrame(rows))
         y_pred = model.predict(X_test)
+        y_pred=y_pred.tolist()
+        for i in range(len(y_pred)):
+            y_pred[i]=int(y_pred[i])
         return days, list(y_pred)
 
     def show_real_prices(self,origin, destination, current_date, flight_date, delta_days=7):
