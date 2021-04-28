@@ -14,3 +14,4 @@ Flask-Cors
 seaborn
 pmdarima== 1.8.0
 xgboost
+numba==0.53.1
