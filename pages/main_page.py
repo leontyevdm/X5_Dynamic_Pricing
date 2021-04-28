@@ -13,6 +13,7 @@ import base64
 import os
 from werkzeug.utils import secure_filename
 from flask import request, make_response, Response
+import numba
 import json
 import time
 
@@ -31,6 +32,9 @@ def init():
 @main_page.route('/predict_prices', methods=['POST','OPTIONS'])
 @logged
 def predict():
+    start = time.time()
+
+    print(request.data)
     data = json.loads(request.data)
     origin = data['origin']
     dest = data['destination']
@@ -38,4 +42,7 @@ def predict():
     current_date = data['date']
     days, prices = get_model().predict(origin, dest, current_date, flight_date)
     x, real_prices = get_model().show_real_prices(origin, dest, current_date, flight_date)
+
+    end = time.time()
+    print('elapsed: ', end - start)
     return make_response(json.dumps({"days": days, "prices": prices, "real_prices": real_prices}), 200)

@@ -4,7 +4,7 @@ import matplotlib as plt
 import numpy as np
 import seaborn as sns
 import datetime
-from datetime import datetime as date
+from datetime import datetime
 from sktime.forecasting.model_selection import temporal_train_test_split
 from sktime.utils.plotting import plot_series
 from sktime.forecasting.naive import NaiveForecaster
@@ -16,6 +16,8 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import xgboost as xgb
+from numba import jit
+
 
 class PricePredictor():
     def init_db(self):
@@ -51,6 +53,7 @@ class PricePredictor():
 
         return df
 
+    @jit(forceobj=True)
     def create_only_date_train_features(self,df):
         rows = [self.create_date_features(df.iloc[i]) for i in range(len(df))]
         curr_df = pd.DataFrame(rows)
@@ -79,9 +82,10 @@ class PricePredictor():
         row['before_flight'] = old_row['before_flight']
         return row
 
-    def predict(self,origin, destination, current_date, flight_date):
-        flight_date = date.strptime(flight_date, '%d.%m.%y')
-        current_date = date.strptime(current_date, '%d.%m.%y')
+    @jit(forceobj=True)
+    def predict(self, origin: str, destination: str, current_date: str, flight_date: str):
+        flight_date = datetime.strptime(flight_date, '%d.%m.%y')
+        current_date = datetime.strptime(current_date, '%d.%m.%y')
         df = self.prepare_df(origin, destination)
         df = df[df['departure_date'] < flight_date.date()]
         y_train = df['price']
@@ -105,9 +109,10 @@ class PricePredictor():
             y_pred[i]=int(y_pred[i])
         return days, list(y_pred)
 
-    def show_real_prices(self,origin, destination, current_date, flight_date, delta_days=7):
-        flight_date= date.strptime(flight_date, '%d.%m.%y')
-        current_date= date.strptime(current_date,'%d.%m.%y')
+    @jit(forceobj=True)
+    def show_real_prices(self, origin: str, destination: str, current_date: str, flight_date: str, delta_days=7):
+        flight_date= datetime.strptime(flight_date, '%d.%m.%y')
+        current_date= datetime.strptime(current_date,'%d.%m.%y')
         df = self.prepare_df(origin, destination)
         days = []
         prices = []
@@ -116,11 +121,9 @@ class PricePredictor():
             fl_date = flight_date.date()
             days.append(str(req_date))
             price = None
-            try:
-                cur_df = df.loc[df['departure_date'] == fl_date]
+            cur_df = df.loc[df['departure_date'] == fl_date]
+            if len(cur_df.loc[cur_df['requested_date'] == req_date]['price']) > 0:
                 price = cur_df.loc[cur_df['requested_date'] == req_date]['price'].iloc[0]
-            except:
-                pass
             prices.append(price)
 
         return days, list(prices)
