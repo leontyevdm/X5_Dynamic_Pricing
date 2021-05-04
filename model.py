@@ -18,6 +18,29 @@ from datetime import datetime, timedelta
 import xgboost as xgb
 from numba import jit
 
+cached_models = {}
+
+
+def get_cached_models():
+    global cached_models
+    return cached_models
+
+
+cached_predicts = {}
+
+
+def get_cached_predicts():
+    global cached_predicts
+    return cached_predicts
+
+
+cached_true = {}
+
+
+def get_cached_true():
+    global cached_true
+    return cached_true
+
 
 class PricePredictor():
     def init_db(self):
@@ -53,7 +76,6 @@ class PricePredictor():
 
         return df
 
-    @jit(forceobj=True)
     def create_only_date_train_features(self,df):
         rows = [self.create_date_features(df.iloc[i]) for i in range(len(df))]
         curr_df = pd.DataFrame(rows)
@@ -82,15 +104,25 @@ class PricePredictor():
         row['before_flight'] = old_row['before_flight']
         return row
 
-    @jit(forceobj=True)
     def predict(self, origin: str, destination: str, current_date: str, flight_date: str):
+        key_str = '|'.join([origin, destination, current_date, flight_date])
+        key_or_dest_str = '|'.join([origin, destination])
+
+        if key_str in get_cached_predicts().keys():
+            return get_cached_predicts()[key_str]
+
         flight_date = datetime.strptime(flight_date, '%d.%m.%y')
         current_date = datetime.strptime(current_date, '%d.%m.%y')
-        df = self.prepare_df(origin, destination)
-        df = df[df['departure_date'] < flight_date.date()]
-        y_train = df['price']
-        X_train = self.create_only_date_train_features(df)
-        model = xgb.XGBRegressor().fit(X_train, y_train)
+
+        if key_or_dest_str in get_cached_models().keys():
+            model = get_cached_models()
+        else:
+            df = self.prepare_df(origin, destination)
+            df = df[df['departure_date'] < flight_date.date()]
+            y_train = df['price']
+            X_train = self.create_only_date_train_features(df)
+            model = xgb.XGBRegressor().fit(X_train, y_train)
+            get_cached_models()[key_or_dest_str] = model
 
         rows = []
         days = []
@@ -107,10 +139,17 @@ class PricePredictor():
         y_pred=y_pred.tolist()
         for i in range(len(y_pred)):
             y_pred[i]=int(y_pred[i])
-        return days, list(y_pred)
 
-    @jit(forceobj=True)
+        res = days, list(y_pred)
+        get_cached_predicts()[key_str] = res
+        return res
+
     def show_real_prices(self, origin: str, destination: str, current_date: str, flight_date: str, delta_days=7):
+        key_str = '|'.join([origin, destination, current_date, flight_date, str(delta_days)])
+
+        if key_str in get_cached_true().keys():
+            return get_cached_true()[key_str]
+
         flight_date= datetime.strptime(flight_date, '%d.%m.%y')
         current_date= datetime.strptime(current_date,'%d.%m.%y')
         df = self.prepare_df(origin, destination)
@@ -126,4 +165,6 @@ class PricePredictor():
                 price = cur_df.loc[cur_df['requested_date'] == req_date]['price'].iloc[0]
             prices.append(price)
 
-        return days, list(prices)
+        res = days, list(prices)
+        get_cached_true()[key_str] = res
+        return res
