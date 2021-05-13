@@ -106,7 +106,7 @@ class PricePredictor():
 
     def predict(self, origin: str, destination: str, current_date: str, flight_date: str):
         key_str = '|'.join([origin, destination, current_date, flight_date])
-        key_or_dest_str = '|'.join([origin, destination])
+        key_or_dest_str = '|'.join([origin, destination, current_date])
 
         if key_str in get_cached_predicts().keys():
             return get_cached_predicts()[key_str]
