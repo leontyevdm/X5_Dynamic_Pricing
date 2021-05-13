@@ -115,7 +115,7 @@ class PricePredictor():
         current_date = datetime.strptime(current_date, '%d.%m.%y')
 
         if key_or_dest_str in get_cached_models().keys():
-            model = get_cached_models()
+            model = get_cached_models()[key_or_dest_str]
         else:
             df = self.prepare_df(origin, destination)
             df = df[df['departure_date'] < flight_date.date()]
