@@ -32,6 +32,9 @@ def init():
 @main_page.route('/predict_prices', methods=['POST','OPTIONS'])
 @logged
 def predict():
+    if request.method=="OPTIONS":
+        return make_response("",200)
+
     start = time.time()
 
     print(request.data)
